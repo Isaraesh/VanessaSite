@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+on:
+  # This triggers the action every time you push code to the main branch
+  push:
+    branches: ['main']
+
+# Sets permissions so the action can push to your GitHub Pages environment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allows only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  # 1. The Build Job (This replaces you running 'npm run build' manually)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Build the static site
+        run: npm run build
+      - name: Upload the dist folder
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  # 2. The Deploy Job (This takes the 'dist' folder and puts it live)
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
